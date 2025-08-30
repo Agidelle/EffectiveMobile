@@ -13,12 +13,11 @@ type Handler struct {
 
 type SubService interface {
 	CloseDB()
-	ListSubscriptions(ctx context.Context) ([]*domain.Subscription, error)
-	GetSubscriptionByID(ctx context.Context, id int) (*domain.Subscription, error)
-	CreateSubscription(ctx context.Context, input *domain.SubscriptionInput) (int64, error)
-	UpdateSubscription(ctx context.Context, id int, input *domain.SubscriptionInput) error
-	DeleteSubscription(ctx context.Context, id int) error
-	GetSubscriptionsSummary(ctx context.Context) (interface{}, error)
+	Search(ctx context.Context, filter *domain.Filter) ([]*domain.Subscription, error)
+	CreateSubscription(ctx context.Context, input *domain.Subscription) error
+	UpdateSubscription(ctx context.Context, id int, input *domain.Subscription) error
+	DeleteSubscription(ctx context.Context, filter *domain.Filter) error
+	GetSubscriptionsSummary(ctx context.Context, filter *domain.Filter) (int, error)
 }
 
 func NewHandler(s SubService) *Handler {
