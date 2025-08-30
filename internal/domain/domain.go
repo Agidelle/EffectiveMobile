@@ -21,13 +21,19 @@ type SubscriptionInput struct {
 type Filter struct {
 	UserID      *string
 	ServiceName *string
+	Price       *int
+	StartDate   *string
+	EndDate     *string
+	Limit       *int
+	Offset      *int
 }
 
 type Repository interface {
 	Search(ctx context.Context, filter *Filter) ([]*Subscription, error)
 	Create(ctx context.Context, sub *Subscription) error
 	Update(ctx context.Context, sub *Subscription) error
-	Delete(ctx context.Context, id *int) error
+	Delete(ctx context.Context, filter *Filter) error
+	GetSubscriptionsForPeriod(ctx context.Context, filter *Filter) ([]*Subscription, error)
 	CloseDB()
 }
 
