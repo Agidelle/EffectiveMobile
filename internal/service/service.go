@@ -24,7 +24,7 @@ func (s *SubServiceImpl) CloseDB() {
 func (s *SubServiceImpl) Search(ctx context.Context, filter *domain.Filter) ([]*domain.Subscription, error) {
 	res, err := s.repo.Search(ctx, filter)
 	if err != nil {
-		slog.Error("Failed to search subscription", "error", err)
+		slog.Error("Failed to search subscriptions", "error", err)
 		return nil, err
 	}
 	if len(res) == 0 {
