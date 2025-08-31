@@ -24,7 +24,7 @@ func (s *SubServiceImpl) CloseDB() {
 func (s *SubServiceImpl) Search(ctx context.Context, filter *domain.Filter) ([]*domain.Subscription, error) {
 	res, err := s.repo.Search(ctx, filter)
 	if err != nil {
-		slog.Error("Failed to search subscription", "error", err)
+		slog.Error("Failed to search subscriptions", "error", err)
 		return nil, err
 	}
 	if len(res) == 0 {
@@ -45,7 +45,7 @@ func (s *SubServiceImpl) CreateSubscription(ctx context.Context, input *domain.S
 	return nil
 }
 
-func (s *SubServiceImpl) UpdateSubscription(ctx context.Context, id int, input *domain.Subscription) error {
+func (s *SubServiceImpl) UpdateSubscription(ctx context.Context, input *domain.Subscription) error {
 	err := s.repo.Update(ctx, input)
 	if err != nil {
 		slog.Error("Failed to update subscription", "error", err)
@@ -56,7 +56,7 @@ func (s *SubServiceImpl) UpdateSubscription(ctx context.Context, id int, input *
 }
 
 func (s *SubServiceImpl) DeleteSubscription(ctx context.Context, filter *domain.Filter) error {
-	err := s.repo.Delete(ctx, nil)
+	err := s.repo.Delete(ctx, filter)
 	if err != nil {
 		slog.Error("Failed to delete subscription", "error", err)
 		return err
