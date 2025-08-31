@@ -171,7 +171,7 @@ func (s *Storage) Delete(ctx context.Context, filter *domain.Filter) error {
 	}
 	if res.RowsAffected() == 0 {
 		slog.Warn("No subscription found to delete", "user_id", filter.UserID, "service_name", filter.ServiceName)
-		return fmt.Errorf("no subscription found for user %s and service %s", filter.UserID, filter.ServiceName)
+		return fmt.Errorf("subscription not found")
 	}
 	slog.Info("Subscription deleted successfully", "user_id", filter.UserID, "service_name", filter.ServiceName)
 	return nil
