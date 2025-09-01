@@ -77,7 +77,13 @@ func (s *SubServiceImpl) GetSubscriptionsSummary(ctx context.Context, filter *do
 	totalPrice := 0
 	for _, sub := range subs {
 		subStart, _ := time.Parse(dateForm, sub.StartDate)
-		subEnd, _ := time.Parse(dateForm, sub.EndDate)
+
+		var subEnd time.Time
+		if sub.EndDate != nil {
+			subEnd, _ = time.Parse(dateForm, *sub.EndDate)
+		} else {
+			subEnd = filterEnd
+		}
 
 		actualStart := maxTime(filterStart, subStart)
 		actualEnd := minTime(filterEnd, subEnd)
