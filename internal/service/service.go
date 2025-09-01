@@ -71,13 +71,18 @@ func (s *SubServiceImpl) GetSubscriptionsSummary(ctx context.Context, filter *do
 		return 0, err
 	}
 
+	filterStart, _ := time.Parse(dateForm, *filter.StartDate)
+	filterEnd, _ := time.Parse(dateForm, *filter.EndDate)
+
 	totalPrice := 0
 	for _, sub := range subs {
-		// Определяем фактический период подписки в рамках выбранного диапазона
-		actualStart := maxDate(*filter.StartDate, sub.StartDate)
-		actualEnd := minDate(*filter.EndDate, sub.EndDate)
+		subStart, _ := time.Parse(dateForm, sub.StartDate)
+		subEnd, _ := time.Parse(dateForm, sub.EndDate)
 
-		monthsInPeriod := calculateMonthsInPeriod(actualStart, actualEnd)
+		actualStart := maxTime(filterStart, subStart)
+		actualEnd := minTime(filterEnd, subEnd)
+
+		monthsInPeriod := calculateMonthsInPeriodTime(actualStart, actualEnd)
 		if monthsInPeriod > 0 {
 			totalPrice += sub.Price * monthsInPeriod
 		}
@@ -85,26 +90,22 @@ func (s *SubServiceImpl) GetSubscriptionsSummary(ctx context.Context, filter *do
 	return totalPrice, nil
 }
 
-func calculateMonthsInPeriod(start, end string) int {
-	startTime, _ := time.Parse(dateForm, start)
-	endTime, _ := time.Parse(dateForm, end)
-
-	yearsDiff := endTime.Year() - startTime.Year()
-	monthsDiff := int(endTime.Month()) - int(startTime.Month())
-
-	return yearsDiff*12 + monthsDiff + 1 // +1, чтобы включить текущий месяц
+func calculateMonthsInPeriodTime(start, end time.Time) int {
+	yearsDiff := end.Year() - start.Year()
+	monthsDiff := int(end.Month()) - int(start.Month())
+	return yearsDiff*12 + monthsDiff + 1
 }
 
-func maxDate(date1, date2 string) string {
-	if date1 > date2 {
-		return date1
+func maxTime(t1, t2 time.Time) time.Time {
+	if t1.After(t2) {
+		return t1
 	}
-	return date2
+	return t2
 }
 
-func minDate(date1 string, date2 *string) string {
-	if date2 == nil || date1 < *date2 {
-		return date1
+func minTime(t1, t2 time.Time) time.Time {
+	if t1.Before(t2) {
+		return t1
 	}
-	return *date2
+	return t2
 }
