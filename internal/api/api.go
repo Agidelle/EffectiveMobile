@@ -11,6 +11,9 @@ import (
 	"time"
 )
 
+const tOutnormal = 3 * time.Second
+const tOutlong = 10 * time.Second
+
 type Handler struct {
 	service SubService
 }
@@ -91,7 +94,7 @@ func (h *Handler) SearchSubscriptions(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), tOutlong)
 	defer cancel()
 	subs, err := h.service.Search(ctx, &filter)
 	if err != nil {
@@ -130,7 +133,7 @@ func (h *Handler) CreateSubscription(w http.ResponseWriter, r *http.Request) {
 	opts := input.SubscriptionToOptions()
 	sub := domain.NewSubscription(opts...)
 
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), tOutnormal)
 	defer cancel()
 
 	if err := h.service.CreateSubscription(ctx, sub); err != nil {
@@ -163,7 +166,7 @@ func (h *Handler) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
 	opts := input.SubscriptionToOptions()
 	sub := domain.NewSubscription(opts...)
 
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), tOutnormal)
 	defer cancel()
 
 	if err := h.service.UpdateSubscription(ctx, sub); err != nil {
@@ -204,7 +207,7 @@ func (h *Handler) DeleteSubscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), tOutnormal)
 	defer cancel()
 
 	err := h.service.DeleteSubscription(ctx, &filter)
@@ -240,7 +243,7 @@ func (h *Handler) GetSubscriptionsSummary(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), tOutlong)
 	defer cancel()
 	total, err := h.service.GetSubscriptionsSummary(ctx, &filter)
 	if err != nil {
