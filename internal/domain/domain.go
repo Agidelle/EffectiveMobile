@@ -1,13 +1,19 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"log/slog"
+	"time"
+)
+
+const dateForm = "01-2006"
 
 type Subscription struct {
-	UserID      string  `json:"user_id"`
-	ServiceName string  `json:"service_name"`
-	Price       int     `json:"price"`
-	StartDate   string  `json:"start_date"`
-	EndDate     *string `json:"end_date,omitempty"`
+	UserID      string     `json:"user_id"`
+	ServiceName string     `json:"service_name"`
+	Price       int        `json:"price"`
+	StartDate   time.Time  `json:"start_date"`
+	EndDate     *time.Time `json:"end_date,omitempty"`
 }
 
 type SubscriptionInput struct {
@@ -19,13 +25,15 @@ type SubscriptionInput struct {
 }
 
 type Filter struct {
-	UserID      *string
-	ServiceName *string
-	Price       *int
-	StartDate   *string
-	EndDate     *string
-	Limit       *int
-	Offset      *int
+	UserID       *string `json:"user_id,omitempty"`
+	ServiceName  *string `json:"service_name,omitempty"`
+	Price        *int    `json:"price,omitempty"`
+	StartDate    *time.Time
+	StartDateStr *string `json:"start_date,omitempty"`
+	EndDate      *time.Time
+	EndDateStr   *string `json:"end_date,omitempty"`
+	Limit        *int    `json:"limit,omitempty"`
+	Offset       *int    `json:"offset,omitempty"`
 }
 
 type Repository interface {
@@ -88,12 +96,22 @@ func WithPrice(price int) SubscriptionOption {
 
 func WithStartDate(date string) SubscriptionOption {
 	return func(s *Subscription) {
-		s.StartDate = date
+		parsedDate, err := time.Parse(dateForm, date)
+		if err != nil {
+			slog.Error("Invalid start_date format, expected MM-YYYY", "error", err)
+			return
+		}
+		s.StartDate = parsedDate
 	}
 }
 
 func WithEndDate(date string) SubscriptionOption {
 	return func(s *Subscription) {
-		s.EndDate = &date
+		parsedDate, err := time.Parse(dateForm, date)
+		if err != nil {
+			slog.Error("Invalid end_date format, expected MM-YYYY", "error", err)
+			return
+		}
+		s.EndDate = &parsedDate
 	}
 }

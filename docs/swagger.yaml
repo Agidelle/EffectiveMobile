@@ -1,6 +1,8 @@
 definitions:
   domain.Filter:
     properties:
+      end_date:
+        type: string
       endDate:
         type: string
       limit:
@@ -9,11 +11,13 @@ definitions:
         type: integer
       price:
         type: integer
-      serviceName:
+      service_name:
+        type: string
+      start_date:
         type: string
       startDate:
         type: string
-      userID:
+      user_id:
         type: string
     type: object
   domain.Subscription:
@@ -49,7 +53,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Удаляет подписку по user_id и service_name
+      description: Удаление подписки по user_id и service_name
       parameters:
       - description: ID пользователя
         in: query
@@ -65,19 +69,19 @@ paths:
       - application/json
       responses:
         "200":
-          description: ok
+          description: deleted
           schema:
             type: string
         "400":
-          description: user_id and service_name are required
+          description: bad request
           schema:
             type: string
         "404":
-          description: subscription not found
+          description: not found
           schema:
             type: string
         "500":
-          description: internal server error
+          description: internal error
           schema:
             type: string
       summary: Удалить подписку
@@ -86,7 +90,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Возвращает список подписок с фильтрами и пагинацией
+      description: Поиск подписок по фильтру
       parameters:
       - description: ID пользователя
         in: query
@@ -100,11 +104,11 @@ paths:
         in: query
         name: price
         type: integer
-      - description: Дата начала
+      - description: Дата начала MM-YYYY
         in: query
         name: start_date
         type: string
-      - description: Дата конца
+      - description: Дата окончания MM-YYYY
         in: query
         name: end_date
         type: string
@@ -125,8 +129,12 @@ paths:
             items:
               $ref: '#/definitions/domain.Subscription'
             type: array
+        "400":
+          description: bad request
+          schema:
+            type: string
         "500":
-          description: internal server error
+          description: internal error
           schema:
             type: string
       summary: Получить список подписок
@@ -135,7 +143,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Создаёт новую подписку
+      description: Добавить новую подписку
       parameters:
       - description: Данные подписки
         in: body
@@ -151,7 +159,7 @@ paths:
           schema:
             type: string
         "400":
-          description: error decode
+          description: bad request
           schema:
             type: string
         "500":
@@ -164,7 +172,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: Обновляет существующую подписку по ID
+      description: Обновление данных подписки по user_id и service_name
       parameters:
       - description: Данные подписки
         in: body
@@ -176,11 +184,11 @@ paths:
       - application/json
       responses:
         "200":
-          description: ok
+          description: updated
           schema:
             type: string
         "400":
-          description: error decode
+          description: bad request
           schema:
             type: string
         "500":
@@ -194,9 +202,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Возвращает сумму подписок по фильтру
+      description: Сводная информация по подпискам за период
       parameters:
-      - description: Фильтр
+      - description: Фильтр с датами
         in: body
         name: filter
         required: true
@@ -212,14 +220,14 @@ paths:
               type: integer
             type: object
         "400":
-          description: invalid filter
+          description: bad request
           schema:
             type: string
         "500":
-          description: internal server error
+          description: internal error
           schema:
             type: string
-      summary: Сводная информация по подпискам
+      summary: Получить сумму подписок за период
       tags:
       - subscriptions
 swagger: "2.0"

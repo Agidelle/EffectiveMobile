@@ -41,6 +41,9 @@ var serveCmd = &cobra.Command{
 		handler := api.NewHandler(svc)
 
 		r := chi.NewRouter()
+		r.Use(api.RecoverMiddleware)
+		// JWT авторизация
+		//r.Use(api.JWTMiddleware)
 		handler.InitRoutes(r)
 
 		srv := &http.Server{
