@@ -1,4 +1,4 @@
-module github.com/Agidelle/EffectiveMobile
+module github.com/agidelle/effectivemobile
 
 go 1.25.0
 
