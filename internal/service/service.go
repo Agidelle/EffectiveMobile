@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-const dateForm string = "01-2006"
-
 type SubServiceImpl struct {
 	repo domain.Repository
 }
