@@ -1,3 +1,8 @@
+// @title           Subscriptions API
+// @version         1.0
+// @description     API для управления подписками пользователей
+// @host            localhost:3000
+// @BasePath        /
 package api
 
 import (
@@ -45,15 +50,43 @@ func (h *Handler) InitRoutes(r chi.Router) {
 	r.Post("/api/subscriptions/summary", h.GetSubscriptionsSummary) // сводная информация по подпискам
 }
 
+func RecoverMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				http.Error(w, "internal server error", http.StatusInternalServerError)
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
+}
+
+// SearchSubscriptions godoc
+// @Summary      Получить список подписок
+// @Description  Поиск подписок по фильтру
+// @Tags         subscriptions
+// @Accept       json
+// @Produce      json
+// @Param        user_id      query     string  false  "ID пользователя"
+// @Param        service_name query     string  false  "Название сервиса"
+// @Param        price        query     int     false  "Цена"
+// @Param        start_date   query     string  false  "Дата начала MM-YYYY"
+// @Param        end_date     query     string  false  "Дата окончания MM-YYYY"
+// @Param        limit        query     int     false  "Лимит"
+// @Param        offset       query     int     false  "Смещение"
+// @Success      200  {array}  domain.Subscription
+// @Failure      400  {string}  string  "bad request"
+// @Failure      500  {string}  string  "internal error"
+// @Router       /api/subscriptions [get]
 func (h *Handler) SearchSubscriptions(w http.ResponseWriter, r *http.Request) {
 	var filter domain.Filter
 
 	userID := r.URL.Query().Get("user_id")
-	if userID != "" || len(userID) == 36 {
+	if userID != "" && len(userID) == 36 {
 		filter.UserID = &userID
 	}
 	serviceName := r.URL.Query().Get("service_name")
-	if serviceName != "" || len(serviceName) <= 255 {
+	if serviceName != "" && len(serviceName) <= 255 {
 		filter.ServiceName = &serviceName
 	}
 	priceStr := r.URL.Query().Get("price")
@@ -73,7 +106,7 @@ func (h *Handler) SearchSubscriptions(w http.ResponseWriter, r *http.Request) {
 	}
 	endDateStr := r.URL.Query().Get("end_date")
 	if endDateStr != "" {
-		if t, err := time.Parse(dateForm, startDateStr); err == nil {
+		if t, err := time.Parse(dateForm, endDateStr); err == nil {
 			filter.EndDate = &t
 		} else {
 			http.Error(w, "invalid start_date format, expected MM-YYYY", http.StatusBadRequest)
@@ -117,6 +150,17 @@ func (h *Handler) SearchSubscriptions(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// CreateSubscription godoc
+// @Summary      Создать подписку
+// @Description  Добавить новую подписку
+// @Tags         subscriptions
+// @Accept       json
+// @Produce      json
+// @Param        subscription  body  domain.SubscriptionInput  true  "Данные подписки"
+// @Success      201  {string}  string  "created"
+// @Failure      400  {string}  string  "bad request"
+// @Failure      500  {string}  string  "internal error"
+// @Router       /api/subscriptions [post]
 func (h *Handler) CreateSubscription(w http.ResponseWriter, r *http.Request) {
 	var input domain.SubscriptionInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -146,6 +190,17 @@ func (h *Handler) CreateSubscription(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+// UpdateSubscription godoc
+// @Summary      Обновить подписку
+// @Description  Обновление данных подписки по user_id и service_name
+// @Tags         subscriptions
+// @Accept       json
+// @Produce      json
+// @Param        subscription  body  domain.SubscriptionInput  true  "Данные подписки"
+// @Success      200  {string}  string  "updated"
+// @Failure      400  {string}  string  "bad request"
+// @Failure      500  {string}  string  "internal error"
+// @Router       /api/subscriptions [put]
 func (h *Handler) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
 	var input domain.SubscriptionInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -175,6 +230,19 @@ func (h *Handler) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// DeleteSubscription godoc
+// @Summary      Удалить подписку
+// @Description  Удаление подписки по user_id и service_name
+// @Tags         subscriptions
+// @Accept       json
+// @Produce      json
+// @Param        user_id      query     string  true  "ID пользователя"
+// @Param        service_name query     string  true  "Название сервиса"
+// @Success      200  {string}  string  "deleted"
+// @Failure      400  {string}  string  "bad request"
+// @Failure      404  {string}  string  "not found"
+// @Failure      500  {string}  string  "internal error"
+// @Router       /api/subscriptions [delete]
 func (h *Handler) DeleteSubscription(w http.ResponseWriter, r *http.Request) {
 	var filter domain.Filter
 
@@ -210,6 +278,17 @@ func (h *Handler) DeleteSubscription(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// GetSubscriptionsSummary godoc
+// @Summary      Получить сумму подписок за период
+// @Description  Сводная информация по подпискам за период
+// @Tags         subscriptions
+// @Accept       json
+// @Produce      json
+// @Param        filter  body  domain.Filter  true  "Фильтр с датами"
+// @Success      200  {object}  map[string]int
+// @Failure      400  {string}  string  "bad request"
+// @Failure      500  {string}  string  "internal error"
+// @Router       /api/subscriptions/summary [post]
 func (h *Handler) GetSubscriptionsSummary(w http.ResponseWriter, r *http.Request) {
 	var filter domain.Filter
 	err := json.NewDecoder(r.Body).Decode(&filter)

@@ -9,3 +9,5 @@ CREATE TABLE subscriptions (
 
 CREATE INDEX idx_subscriptions_user_service_dates
     ON subscriptions (user_id, service_name, start_date, end_date);
+CREATE UNIQUE INDEX idx_subscriptions_user_service_unique
+    ON subscriptions (user_id, service_name);
