@@ -9,7 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Agidelle/EffectiveMobile/internal/domain"
+	"github.com/agidelle/effectivemobile/internal/domain"
 	"github.com/go-chi/chi/v5"
 	"log/slog"
 	"net/http"

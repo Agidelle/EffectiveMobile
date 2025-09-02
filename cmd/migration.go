@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/Agidelle/EffectiveMobile/internal/config"
+	"github.com/agidelle/effectivemobile/internal/config"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
