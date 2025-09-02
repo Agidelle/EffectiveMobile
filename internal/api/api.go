@@ -92,6 +92,11 @@ func (h *Handler) SearchSubscriptions(w http.ResponseWriter, r *http.Request) {
 			filter.Offset = &offset
 		}
 	}
+	if err := validateFilter(&filter); err != nil {
+		slog.Error("Invalid filter", "error", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), tOutlong)
 	defer cancel()
@@ -274,6 +279,35 @@ func validateSubscriptionInput(input *domain.SubscriptionInput) error {
 		if _, err := time.Parse(dateForm, *input.EndDate); err != nil {
 			return fmt.Errorf("invalid end_date format, expected MM-YYYY")
 		}
+	}
+	return nil
+}
+
+func validateFilter(filter *domain.Filter) error {
+	if filter.UserID != nil && len(*filter.UserID) != 36 {
+		return fmt.Errorf("user_id must be correct format UUID")
+	}
+	if filter.ServiceName != nil && len(*filter.ServiceName) > 255 {
+		return fmt.Errorf("service_name must not exceed 255 characters")
+	}
+	if filter.Price != nil && *filter.Price <= 0 {
+		return fmt.Errorf("price must be positive")
+	}
+	if filter.StartDateStr != nil && *filter.StartDateStr != "" {
+		if _, err := time.Parse(dateForm, *filter.StartDateStr); err != nil {
+			return fmt.Errorf("invalid start_date format, expected MM-YYYY")
+		}
+	}
+	if filter.EndDateStr != nil && *filter.EndDateStr != "" {
+		if _, err := time.Parse(dateForm, *filter.EndDateStr); err != nil {
+			return fmt.Errorf("invalid end_date format, expected MM-YYYY")
+		}
+	}
+	if filter.Limit != nil && *filter.Limit <= 0 {
+		return fmt.Errorf("limit must be positive")
+	}
+	if filter.Offset != nil && *filter.Offset < 0 {
+		return fmt.Errorf("offset must be non-negative")
 	}
 	return nil
 }
