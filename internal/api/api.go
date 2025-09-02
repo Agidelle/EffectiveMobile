@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/Agidelle/EffectiveMobile/internal/domain"
 	"github.com/go-chi/chi/v5"
 	"log/slog"
@@ -11,8 +12,11 @@ import (
 	"time"
 )
 
-const tOutnormal = 3 * time.Second
-const tOutlong = 10 * time.Second
+const (
+	dateForm   = "01-2006"
+	tOutnormal = 3 * time.Second
+	tOutlong   = 10 * time.Second
+)
 
 type Handler struct {
 	service SubService
@@ -41,30 +45,15 @@ func (h *Handler) InitRoutes(r chi.Router) {
 	r.Post("/api/subscriptions/summary", h.GetSubscriptionsSummary) // сводная информация по подпискам
 }
 
-// @Summary      Получить список подписок
-// @Description  Возвращает список подписок с фильтрами и пагинацией
-// @Tags         subscriptions
-// @Accept       json
-// @Produce      json
-// @Param        user_id      query     string  false  "ID пользователя"
-// @Param        service_name query     string  false  "Название сервиса"
-// @Param        price        query     int     false  "Цена"
-// @Param        start_date   query     string  false  "Дата начала"
-// @Param        end_date     query     string  false  "Дата конца"
-// @Param        limit        query     int     false  "Лимит"
-// @Param        offset       query     int     false  "Смещение"
-// @Success      200  {array}  domain.Subscription
-// @Failure      500  {string}  string  "internal server error"
-// @Router       /api/subscriptions [get]
 func (h *Handler) SearchSubscriptions(w http.ResponseWriter, r *http.Request) {
 	var filter domain.Filter
 
 	userID := r.URL.Query().Get("user_id")
-	if userID != "" {
+	if userID != "" || len(userID) == 36 {
 		filter.UserID = &userID
 	}
 	serviceName := r.URL.Query().Get("service_name")
-	if serviceName != "" {
+	if serviceName != "" || len(serviceName) <= 255 {
 		filter.ServiceName = &serviceName
 	}
 	priceStr := r.URL.Query().Get("price")
@@ -73,13 +62,23 @@ func (h *Handler) SearchSubscriptions(w http.ResponseWriter, r *http.Request) {
 			filter.Price = &price
 		}
 	}
-	startDate := r.URL.Query().Get("start_date")
-	if startDate != "" {
-		filter.StartDate = &startDate
+	startDateStr := r.URL.Query().Get("start_date")
+	if startDateStr != "" {
+		if t, err := time.Parse(dateForm, startDateStr); err == nil {
+			filter.StartDate = &t
+		} else {
+			http.Error(w, "invalid start_date format, expected MM-YYYY", http.StatusBadRequest)
+			return
+		}
 	}
-	endDate := r.URL.Query().Get("end_date")
-	if endDate != "" {
-		filter.EndDate = &endDate
+	endDateStr := r.URL.Query().Get("end_date")
+	if endDateStr != "" {
+		if t, err := time.Parse(dateForm, startDateStr); err == nil {
+			filter.EndDate = &t
+		} else {
+			http.Error(w, "invalid start_date format, expected MM-YYYY", http.StatusBadRequest)
+			return
+		}
 	}
 	limitStr := r.URL.Query().Get("limit")
 	if limitStr != "" {
@@ -113,21 +112,17 @@ func (h *Handler) SearchSubscriptions(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// @Summary      Создать подписку
-// @Description  Создаёт новую подписку
-// @Tags         subscriptions
-// @Accept       json
-// @Produce      json
-// @Param        subscription  body      domain.SubscriptionInput  true  "Данные подписки"
-// @Success      201  {string}  string  "created"
-// @Failure      400  {string}  string  "error decode"
-// @Failure      500  {string}  string  "internal error"
-// @Router       /api/subscriptions [post]
 func (h *Handler) CreateSubscription(w http.ResponseWriter, r *http.Request) {
 	var input domain.SubscriptionInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		slog.Error("Failed to decode json", "error", err)
 		http.Error(w, "error decode", http.StatusBadRequest)
+		return
+	}
+	err := validateSubscriptionInput(&input)
+	if err != nil {
+		slog.Error("Invalid subscription input", "error", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -146,21 +141,17 @@ func (h *Handler) CreateSubscription(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-// @Summary      Обновить подписку
-// @Description  Обновляет существующую подписку по ID
-// @Tags         subscriptions
-// @Accept       json
-// @Produce      json
-// @Param        subscription  body      domain.SubscriptionInput  true  "Данные подписки"
-// @Success      200  {string}  string  "ok"
-// @Failure      400  {string}  string  "error decode"
-// @Failure      500  {string}  string  "internal error"
-// @Router       /api/subscriptions [put]
 func (h *Handler) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
 	var input domain.SubscriptionInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		slog.Error("Failed to decode json", "error", err)
 		http.Error(w, "error decode", http.StatusBadRequest)
+		return
+	}
+	err := validateSubscriptionInput(&input)
+	if err != nil {
+		slog.Error("Invalid subscription input", "error", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -179,27 +170,15 @@ func (h *Handler) UpdateSubscription(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// @Summary      Удалить подписку
-// @Description  Удаляет подписку по user_id и service_name
-// @Tags         subscriptions
-// @Accept       json
-// @Produce      json
-// @Param        user_id      query     string  true  "ID пользователя"
-// @Param        service_name query     string  true  "Название сервиса"
-// @Success      200  {string}  string  "ok"
-// @Failure      400  {string}  string  "user_id and service_name are required"
-// @Failure      404  {string}  string  "subscription not found"
-// @Failure      500  {string}  string  "internal server error"
-// @Router       /api/subscriptions [delete]
 func (h *Handler) DeleteSubscription(w http.ResponseWriter, r *http.Request) {
 	var filter domain.Filter
 
 	userID := r.URL.Query().Get("user_id")
-	if userID != "" {
+	if userID != "" || len(userID) == 36 {
 		filter.UserID = &userID
 	}
 	serviceName := r.URL.Query().Get("service_name")
-	if serviceName != "" {
+	if serviceName != "" || len(serviceName) <= 255 {
 		filter.ServiceName = &serviceName
 	}
 
@@ -226,21 +205,33 @@ func (h *Handler) DeleteSubscription(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// @Summary      Сводная информация по подпискам
-// @Description  Возвращает сумму подписок по фильтру
-// @Tags         subscriptions
-// @Accept       json
-// @Produce      json
-// @Param        filter  body  domain.Filter  true  "Фильтр"
-// @Success      200  {object}  map[string]int
-// @Failure      400  {string}  string  "invalid filter"
-// @Failure      500  {string}  string  "internal server error"
-// @Router       /api/subscriptions/summary [post]
 func (h *Handler) GetSubscriptionsSummary(w http.ResponseWriter, r *http.Request) {
 	var filter domain.Filter
-	if err := json.NewDecoder(r.Body).Decode(&filter); err != nil {
+	err := json.NewDecoder(r.Body).Decode(&filter)
+	if err != nil {
 		slog.Error("Failed to decode json", "error", err)
 		http.Error(w, "invalid filter", http.StatusBadRequest)
+		return
+	}
+
+	if filter.StartDateStr != nil && *filter.StartDateStr != "" {
+		if t, err := time.Parse(dateForm, *filter.StartDateStr); err == nil {
+			filter.StartDate = &t
+		} else {
+			http.Error(w, "invalid start_date format, expected MM-YYYY", http.StatusBadRequest)
+			return
+		}
+	}
+	if filter.EndDateStr != nil && *filter.EndDateStr != "" {
+		if t, err := time.Parse(dateForm, *filter.EndDateStr); err == nil {
+			filter.EndDate = &t
+		} else {
+			http.Error(w, "invalid end_date format, expected MM-YYYY", http.StatusBadRequest)
+			return
+		}
+	}
+	if filter.StartDate == nil || filter.EndDate == nil {
+		http.Error(w, "start_date and end_date are required", http.StatusBadRequest)
 		return
 	}
 
@@ -258,4 +249,31 @@ func (h *Handler) GetSubscriptionsSummary(w http.ResponseWriter, r *http.Request
 		slog.Error("Failed to encode to JSON", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 	}
+}
+
+func validateSubscriptionInput(input *domain.SubscriptionInput) error {
+	if input.UserID == nil || *input.UserID == "" || len(*input.UserID) != 36 {
+		return fmt.Errorf("user_id is required correct format UUID")
+	}
+	if input.ServiceName == nil || *input.ServiceName == "" {
+		return fmt.Errorf("service_name is required")
+	}
+	if input.ServiceName != nil && len(*input.ServiceName) > 255 {
+		return fmt.Errorf("service_name must not exceed 255 characters")
+	}
+	if input.Price == nil || *input.Price <= 0 {
+		return fmt.Errorf("price must be positive")
+	}
+	if input.StartDate == nil || *input.StartDate == "" {
+		return fmt.Errorf("start_date is required")
+	}
+	if _, err := time.Parse(dateForm, *input.StartDate); err != nil {
+		return fmt.Errorf("invalid start_date format, expected MM-YYYY")
+	}
+	if input.EndDate != nil && *input.EndDate != "" {
+		if _, err := time.Parse(dateForm, *input.EndDate); err != nil {
+			return fmt.Errorf("invalid end_date format, expected MM-YYYY")
+		}
+	}
+	return nil
 }
