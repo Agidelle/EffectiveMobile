@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"github.com/Agidelle/EffectiveMobile/internal/domain"
+	"github.com/agidelle/effectivemobile/internal/domain"
 	"log/slog"
 	"time"
 )

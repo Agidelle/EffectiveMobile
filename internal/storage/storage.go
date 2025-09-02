@@ -3,8 +3,8 @@ package storage
 import (
 	"context"
 	"fmt"
-	"github.com/Agidelle/EffectiveMobile/internal/config"
-	"github.com/Agidelle/EffectiveMobile/internal/domain"
+	"github.com/agidelle/effectivemobile/internal/config"
+	"github.com/agidelle/effectivemobile/internal/domain"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"log/slog"

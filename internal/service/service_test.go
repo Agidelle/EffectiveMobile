@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"errors"
-	"github.com/Agidelle/EffectiveMobile/internal/domain"
+	"github.com/agidelle/effectivemobile/internal/domain"
 	"reflect"
 	"testing"
 	"time"

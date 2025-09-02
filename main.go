@@ -1,6 +1,6 @@
 package main
 
-import "github.com/Agidelle/EffectiveMobile/cmd"
+import "github.com/agidelle/effectivemobile/cmd"
 
 func main() {
 	cmd.Execute()
